@@ -1,0 +1,4 @@
+2     # Unit of energy for input values
+1  # Volume of unit cell/cell used
+8. 11. 70 # minimal/maximal value for lattice const.(in bohr), number of points to calculate
+21   # number of energy pairs (lattice const(in bohr) & energy(in eV))

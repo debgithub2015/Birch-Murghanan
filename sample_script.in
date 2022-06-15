@@ -1,0 +1,110 @@
+#!/bin/bash -l
+
+
+############################ SLURM directives ##########################
+#SBATCH --job-name="AlP"
+#SBATCH --output="%j.o"
+#SBATCH --error="%j.e"
+#SBATCH --account="thonhauserGrp"
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=1
+#SBATCH --time=1-00:00:00
+#SBATCH --partition="small"
+#SBATCH --mem=120Gb
+########################################################################
+
+ulimit -s unlimited
+
+module load rhel7/openmpi/3.1.1-intel-2018  rhel7/compilers/intel-2018-lp64
+
+pwdir=/deac/thonhauserGrp/chakrad/quantum-espresso-6.3/qe-6.3-test-xcfunc-1/bin
+#pwdir=/deac/thonhauserGrp/chakrad/quantum-espresso-6.2.1/qe-6.2.1-DC-DFd-openmpi2.1.0-intel2018/bin
+#pwdir=/deac/thonhauserGrp/chakrad/quantum-espresso-6.2.1/qe-6.2.1-openmpi2.1.0-intel2018/bin
+
+pseudodir=/deac/thonhauserGrp/chakrad/calculations/atomandmolecule-qe6.2.1-i2012-C6modif/all_pbe_UPF_v1.5-1
+#pseudodir=/deac/thonhauserGrp/chakrad/calculations/atomandmolecule-qe6.2.1-i2012-C6modif/all_pbe_UPF_v1.5-1
+#pseudodir=/deac/thonhauserGrp/chakrad/calculations/atomandmolecule-qe6.2.1-i2012-C6modif/all_pbe_UPF_v1.5
+
+############################## Pre run settings ########################
+SCRATCH=/scratch/$SLURM_JOBID
+########################################################################
+
+#for func in vdw-df vdw-df2 vdw-df-cx vdw-df-obk8 rvv10; do
+for func in "sla+pw+ob8n+vdW1" ; do
+mkdir $func
+cd $func
+for pos in `seq -f%4.2f 9.8 0.05 10.8`;do
+mkdir $pos
+cd $pos
+
+############################ PWscf input file ##########################
+cat > input_file << EOF
+&control
+   calculation     = 'scf'
+   restart_mode    = 'from_scratch'
+   prefix          = 'AlP-$func-$pos'
+   pseudo_dir      = '$pseudodir'
+   outdir          = '$SCRATCH'
+   verbosity       = 'high'
+/
+
+&system
+   ibrav           = 2
+   nat             = 2
+   ntyp            = 2
+   celldm(1)       = XXX
+   input_dft       = '$func'
+   occupations     = smearing
+   smearing        = gauss
+   degauss         = 0.007349862
+   ecutwfc         = 50.0
+   ecutrho         = 600
+/
+
+&electrons
+    mixing_mode='plain'
+    mixing_beta=0.7
+    conv_thr =1.0d-8
+    electron_maxstep=500
+/
+
+ATOMIC_SPECIES
+   P  31  p_pbe_v1.5.uspp.F.UPF 
+   Al  27 al_pbe_v1.uspp.F.UPF 
+ATOMIC_POSITIONS crystal
+Al 0.0    0.0    0.0
+P  0.75   0.75   0.75
+K_POINTS automatic
+15 15 15 0 0 0
+
+EOF
+########################################################################
+
+
+
+
+############################### PWscf execution ########################
+# mpiexec pw.x < input_file > output
+#
+#for pos in `seq -f%4.2f 2.0 0.2 5.0`
+#do
+
+sed -e 's/XXX/'$pos'/g' input_file > input_"$pos"_"$func"
+mpirun $pwdir/pw.x < input_"$pos"_"$func" > output_"$pos"_"$func"
+
+########################################################################
+rm -rf input_file 
+cd ../
+done
+
+cd ../
+done
+
+
+echo "DONE"
+
+################################ Clean up #############################
+# cp -r  $SCRATCH/* $PBS_O_WORKDIR
+# rm -rf pwscf.*
+########################################################################

@@ -1,0 +1,38 @@
+&control
+   calculation     = 'scf'
+   restart_mode    = 'from_scratch'
+   prefix          = 'AlP-vdw-df-10.80'
+   pseudo_dir      = '/deac/thonhauserGrp/chakrad/calculations/atomandmolecule-qe6.2.1-i2012-C6modif/all_pbe_UPF_v1.5'
+   outdir          = '/scratch/164546'
+   verbosity       = 'high'
+/
+
+&system
+   ibrav           = 2
+   nat             = 2
+   ntyp            = 2
+   celldm(1)       = 10.80
+   input_dft       = 'vdw-df'
+   occupations     = smearing
+   smearing        = gauss
+   degauss         = 0.007349862
+   ecutwfc         = 50.0
+   ecutrho         = 600
+/
+
+&electrons
+    mixing_mode='plain'
+    mixing_beta=0.7
+    conv_thr =1.0d-8
+    electron_maxstep=500
+/
+
+ATOMIC_SPECIES
+   P  31  p_pbe_v1.5.uspp.F.UPF 
+   Al  27 al_pbe_v1.uspp.F.UPF 
+ATOMIC_POSITIONS crystal
+Al 0.0    0.0    0.0
+P  0.75   0.75   0.75
+K_POINTS automatic
+15 15 15 0 0 0
+
